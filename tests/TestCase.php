@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sunrice\Xendit\Tests;
+namespace Sunrice\CommerceXendit\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\ServiceProvider as InertiaServiceProvider;
@@ -14,9 +14,9 @@ use Spatie\OneTimePasswords\OneTimePasswordsServiceProvider;
 use Spatie\Permission\PermissionServiceProvider;
 use Spatie\Sitemap\SitemapServiceProvider;
 use Sunrice\Commerce\CommerceServiceProvider;
+use Sunrice\CommerceXendit\XenditServiceProvider;
 use Sunrice\Frontend\RouteMatcher;
 use Sunrice\SunriceServiceProvider;
-use Sunrice\Xendit\XenditServiceProvider;
 use Workbench\App\Models\User;
 
 /** A store as commerce's own tests set it up, with this package's provider last. */

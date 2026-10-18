@@ -1,10 +1,10 @@
-# Sunrice Xendit
+# Sunrice Commerce Xendit
 
 Xendit invoices for [Sunrice Commerce](https://github.com/Digital-Citra-Kreatif/sunrice-commerce):
 the customer pays on Xendit's invoice page by virtual account, e-wallet, QRIS, card or retail
 outlet, and comes back to the order. Currencies: IDR, PHP, THB, VND and MYR.
 
-`Sunrice\Xendit\Xendit`, key `xendit`, module `xendit` (Payments; needs `payments`, off by default).
+`Sunrice\CommerceXendit\Xendit`, key `xendit`, module `xendit` (Payments; needs `payments`, off by default).
 
 ## Contents
 
@@ -20,7 +20,7 @@ outlet, and comes back to the order. Currencies: IDR, PHP, THB, VND and MYR.
 ## Install
 
 ```bash
-composer require sunrice/xendit
+composer require sunrice/commerce-xendit
 ```
 
 Requirements: PHP 8.4+, Laravel 13, Sunrice Commerce with `Payments\Methods\GatewayMethod`. The
@@ -30,10 +30,11 @@ The package uses Xendit's SDK, `xendit/xendit-php` 7.x, which needs **Guzzle 7**
 (`guzzlehttp/guzzle` ^7.3). Laravel 13 takes Guzzle 7 or 8, so Composer installs Guzzle 7; an
 application that requires Guzzle 8 itself can't install this package until the SDK allows it.
 
-To change the config file (it only reads `.env`):
+To change the config file, `config/commerce-xendit.php` (key `commerce-xendit`; it only reads
+`.env`):
 
 ```bash
-php artisan vendor:publish --tag=xendit-config
+php artisan vendor:publish --tag=commerce-xendit-config
 ```
 
 ## Keys
@@ -56,10 +57,10 @@ XENDIT_CALLBACK_TOKEN=…
 
 | Key | Default | |
 | --- | --- | --- |
-| `xendit.secret_key` | `env('XENDIT_SECRET_KEY')` | Live secret key |
-| `xendit.callback_token` | `env('XENDIT_CALLBACK_TOKEN')` | Live webhook verification token |
-| `xendit.sandbox_secret_key` | `env('XENDIT_SANDBOX_SECRET_KEY')` | Test secret key |
-| `xendit.sandbox_callback_token` | `env('XENDIT_SANDBOX_CALLBACK_TOKEN')` | Test webhook verification token |
+| `commerce-xendit.secret_key` | `env('XENDIT_SECRET_KEY')` | Live secret key |
+| `commerce-xendit.callback_token` | `env('XENDIT_CALLBACK_TOKEN')` | Live webhook verification token |
+| `commerce-xendit.sandbox_secret_key` | `env('XENDIT_SANDBOX_SECRET_KEY')` | Test secret key |
+| `commerce-xendit.sandbox_callback_token` | `env('XENDIT_SANDBOX_CALLBACK_TOKEN')` | Test webhook verification token |
 
 Keys stay in `.env`, never in the store settings: the settings form says which are set, never
 their values.
@@ -120,7 +121,7 @@ Switch Sandbox off once the live keys and the live webhook are set.
 
 ## Testing your own code
 
-The SDK calls go through `Sunrice\Xendit\Gateways\XenditClient` (bound to `XenditSdkClient` with
+The SDK calls go through `Sunrice\CommerceXendit\Gateways\XenditClient` (bound to `XenditSdkClient` with
 `bindIf`). Bind your own to test without the network:
 
 ```php

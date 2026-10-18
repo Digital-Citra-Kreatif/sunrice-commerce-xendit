@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sunrice\Xendit;
+namespace Sunrice\CommerceXendit;
 
 use Illuminate\Http\Request;
 use Sunrice\Commerce\Orders\Models\Order;
@@ -11,7 +11,7 @@ use Sunrice\Commerce\Payments\Methods\GatewayMethod;
 use Sunrice\Commerce\Payments\Models\Payment;
 use Sunrice\Commerce\Payments\PaymentResult;
 use Sunrice\Commerce\Payments\WebhookEvent;
-use Sunrice\Xendit\Gateways\XenditClient;
+use Sunrice\CommerceXendit\Gateways\XenditClient;
 
 /**
  * Xendit Invoice (redirect): virtual accounts, e-wallets, QRIS, cards and
@@ -42,8 +42,8 @@ class Xendit extends GatewayMethod
     public function settingsSchema(): array
     {
         return $this->gatewayFields([
-            'sandbox' => ['xendit.sandbox_secret_key' => 'XENDIT_SANDBOX_SECRET_KEY', 'xendit.sandbox_callback_token' => 'XENDIT_SANDBOX_CALLBACK_TOKEN'],
-            'live' => ['xendit.secret_key' => 'XENDIT_SECRET_KEY', 'xendit.callback_token' => 'XENDIT_CALLBACK_TOKEN'],
+            'sandbox' => ['commerce-xendit.sandbox_secret_key' => 'XENDIT_SANDBOX_SECRET_KEY', 'commerce-xendit.sandbox_callback_token' => 'XENDIT_SANDBOX_CALLBACK_TOKEN'],
+            'live' => ['commerce-xendit.secret_key' => 'XENDIT_SECRET_KEY', 'commerce-xendit.callback_token' => 'XENDIT_CALLBACK_TOKEN'],
         ]);
     }
 
@@ -59,12 +59,12 @@ class Xendit extends GatewayMethod
 
     protected function secretKey(): string
     {
-        return (string) config($this->sandbox() ? 'xendit.sandbox_secret_key' : 'xendit.secret_key');
+        return (string) config($this->sandbox() ? 'commerce-xendit.sandbox_secret_key' : 'commerce-xendit.secret_key');
     }
 
     protected function callbackToken(): string
     {
-        return (string) config($this->sandbox() ? 'xendit.sandbox_callback_token' : 'xendit.callback_token');
+        return (string) config($this->sandbox() ? 'commerce-xendit.sandbox_callback_token' : 'commerce-xendit.callback_token');
     }
 
     protected function createPayment(Order $order, Payment $payment, string $reference): array

@@ -11,7 +11,7 @@ use Sunrice\Commerce\Payments\Models\WebhookCall;
 use Sunrice\Commerce\Payments\PaymentContext;
 use Sunrice\Commerce\Payments\PaymentManager;
 use Sunrice\Commerce\Settings\StoreSettings;
-use Sunrice\Xendit\Gateways\XenditClient;
+use Sunrice\CommerceXendit\Gateways\XenditClient;
 
 /*
  * Xendit invoices with a fake client (no network): the redirect, its
@@ -21,7 +21,7 @@ use Sunrice\Xendit\Gateways\XenditClient;
 
 beforeEach(function () {
     $this->withoutMiddleware(ValidateCsrfToken::class);
-    config(['honeypot.enabled' => false, 'xendit.secret_key' => 'xnd_production_test', 'xendit.callback_token' => 'cb-live']);
+    config(['honeypot.enabled' => false, 'commerce-xendit.secret_key' => 'xnd_production_test', 'commerce-xendit.callback_token' => 'cb-live']);
     $this->mug = checkoutStore();
     app(ToggleFeature::class)->handle('xendit', true);
     $stored = (array) app(StoreSettings::class)->get('payments.methods');
@@ -76,12 +76,12 @@ it('needs the secret key and the callback token of the current mode', function (
     $offered = fn () => array_keys(app(PaymentManager::class)->available(new PaymentContext(60000)));
     expect($offered())->toContain('xendit');
 
-    config(['xendit.callback_token' => null]);
+    config(['commerce-xendit.callback_token' => null]);
     app()->forgetScopedInstances();
     expect($offered())->not->toContain('xendit');
 
     // Sandbox mode reads the sandbox keys.
-    config(['xendit.callback_token' => 'cb-live']);
+    config(['commerce-xendit.callback_token' => 'cb-live']);
     $stored = (array) app(StoreSettings::class)->get('payments.methods');
     app(StoreSettings::class)->saveSection('payments', ['methods' => [...$stored, 'xendit' => [...$stored['xendit'], 'sandbox' => true]]]);
     app()->forgetScopedInstances();

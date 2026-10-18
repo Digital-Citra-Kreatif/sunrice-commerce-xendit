@@ -13,11 +13,11 @@ use Sunrice\Commerce\Checkout\CheckoutData;
 use Sunrice\Commerce\Regions\RegionImporter;
 use Sunrice\Commerce\Shipping\Models\ShippingMethod;
 use Sunrice\Commerce\Shipping\Models\ShippingZone;
+use Sunrice\CommerceXendit\Tests\TestCase;
 use Sunrice\Models\Blueprint;
 use Sunrice\Models\Collection;
 use Sunrice\Models\Entry;
 use Sunrice\Support\Locales;
-use Sunrice\Xendit\Tests\TestCase;
 
 uses(TestCase::class)->in('Feature');
 

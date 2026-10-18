@@ -2,32 +2,37 @@
 
 declare(strict_types=1);
 
-namespace Sunrice\Xendit;
+namespace Sunrice\CommerceXendit;
 
-use Illuminate\Support\ServiceProvider;
-use Sunrice\Commerce\Commerce;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Sunrice\Commerce\Facades\Commerce;
 use Sunrice\Commerce\Features\Feature;
-use Sunrice\Xendit\Gateways\XenditClient;
-use Sunrice\Xendit\Gateways\XenditSdkClient;
+use Sunrice\CommerceXendit\Gateways\XenditClient;
+use Sunrice\CommerceXendit\Gateways\XenditSdkClient;
 
 /**
  * The `xendit` module (Payments; needs `payments`, off by default) and the
  * Xendit method, key `xendit`, so its webhook is commerce's
- * /commerce/webhooks/xendit.
+ * /commerce/webhooks/xendit. Keys come from config/commerce-xendit.php
+ * (.env).
  */
-class XenditServiceProvider extends ServiceProvider
+class XenditServiceProvider extends PackageServiceProvider
 {
-    public function register(): void
+    public function configurePackage(Package $package): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/xendit.php', 'xendit');
+        $package->name('commerce-xendit')
+            ->hasConfigFile();
+    }
+
+    public function packageRegistered(): void
+    {
         $this->app->bindIf(XenditClient::class, XenditSdkClient::class);
     }
 
-    public function boot(Commerce $commerce): void
+    public function packageBooted(): void
     {
-        $this->publishes([__DIR__.'/../config/xendit.php' => config_path('xendit.php')], 'xendit-config');
-
-        $commerce->registerFeature(new Feature('xendit', 'payments', 'Xendit', 'Virtual accounts, e-wallets, QRIS and cards on a Xendit invoice. Needs XENDIT_SECRET_KEY and XENDIT_CALLBACK_TOKEN.', ['payments'], ['shop', 'quote'], default: false));
-        $commerce->registerPaymentMethod(Xendit::class);
+        Commerce::registerFeature(new Feature('xendit', 'payments', 'Xendit', 'Virtual accounts, e-wallets, QRIS and cards on a Xendit invoice. Needs XENDIT_SECRET_KEY and XENDIT_CALLBACK_TOKEN.', ['payments'], ['shop', 'quote'], default: false));
+        Commerce::registerPaymentMethod(Xendit::class);
     }
 }
