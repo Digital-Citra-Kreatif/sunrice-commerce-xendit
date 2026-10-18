@@ -1,0 +1,67 @@
+{
+    "name": "sunrice/xendit",
+    "description": "Xendit invoices for Sunrice Commerce: virtual accounts, e-wallets, QRIS, cards and retail outlets on Xendit's payment page.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "sunrice",
+        "laravel",
+        "ecommerce",
+        "payments",
+        "xendit"
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/Digital-Citra-Kreatif/sunrice-commerce"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/Digital-Citra-Kreatif/sunrice-cms"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "sunrice/commerce": "dev-main",
+        "xendit/xendit-php": "^7.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.0",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sunrice\\Xendit\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sunrice\\Xendit\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Sunrice\\Xendit\\XenditServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "lint": "pint --test",
+        "format": "pint",
+        "analyse": "phpstan analyse --memory-limit=1G"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
