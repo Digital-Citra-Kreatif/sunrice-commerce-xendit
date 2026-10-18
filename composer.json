@@ -1,6 +1,6 @@
 {
-    "name": "sunrice/xendit",
-    "description": "Xendit invoices for Sunrice Commerce: virtual accounts, e-wallets, QRIS, cards and retail outlets on Xendit's payment page.",
+    "name": "sunrice/commerce-xendit",
+    "description": "Xendit payments for Sunrice Commerce: virtual accounts, e-wallets, QRIS, cards and retail outlets on a Xendit invoice.",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -8,21 +8,26 @@
         "laravel",
         "ecommerce",
         "payments",
-        "xendit"
+        "xendit",
+        "indonesia"
     ],
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/Digital-Citra-Kreatif/sunrice-commerce"
+            "url": "https://github.com/Digital-Citra-Kreatif/sunrice-cms"
         },
         {
             "type": "vcs",
-            "url": "https://github.com/Digital-Citra-Kreatif/sunrice-cms"
+            "url": "https://github.com/Digital-Citra-Kreatif/sunrice-commerce"
         }
     ],
     "require": {
         "php": "^8.4",
-        "sunrice/commerce": "dev-main",
+        "illuminate/contracts": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/support": "^13.0",
+        "spatie/laravel-package-tools": "^1.93",
+        "sunrice/commerce": "^1.0 || dev-main",
         "xendit/xendit-php": "^7.0"
     },
     "require-dev": {
@@ -34,19 +39,19 @@
     },
     "autoload": {
         "psr-4": {
-            "Sunrice\\Xendit\\": "src/"
+            "Sunrice\\CommerceXendit\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Sunrice\\Xendit\\Tests\\": "tests/",
+            "Sunrice\\CommerceXendit\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Sunrice\\Xendit\\XenditServiceProvider"
+                "Sunrice\\CommerceXendit\\XenditServiceProvider"
             ]
         }
     },

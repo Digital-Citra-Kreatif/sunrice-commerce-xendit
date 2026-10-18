@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sunrice\Xendit\Gateways;
+namespace Sunrice\CommerceXendit\Gateways;
 
 use RuntimeException;
 use Xendit\Configuration;
