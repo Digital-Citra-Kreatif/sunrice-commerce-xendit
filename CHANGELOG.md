@@ -2,9 +2,10 @@
 
 ## Unreleased — 1.0.0
 
-The first release, moved out of commerce into its own package. Needs Sunrice Commerce with
-`Payments\Methods\GatewayMethod` (`dev-main` until commerce is tagged), PHP 8.4, Laravel 13 and
-`xendit/xendit-php` 7.x (Guzzle 7).
+The first release, moved out of commerce into its own package. Needs Sunrice Commerce on the Sunrice
+panel (`sunrice/admin`) and CMS (`sunrice/cms`) (`dev-main` until commerce is tagged), PHP 8.4,
+Laravel 13 and `xendit/xendit-php` 7.x (Guzzle 7). Its settings page is Settings → Store →
+Payments → Xendit, at `/admin/commerce/settings/payments/xendit`.
 
 Renamed before the first release to match the other commerce packages (`sunrice/commerce-biteship`):
 the package is `sunrice/commerce-xendit` (was `sunrice/xendit`), the namespace

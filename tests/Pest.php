@@ -3,8 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
-use Sunrice\Actions\Entries\PublishTranslation;
-use Sunrice\Actions\Entries\SaveDraft;
+use Spatie\Permission\Models\Role;
+use Sunrice\Admin\Actions\Permissions\SyncPermissions;
+use Sunrice\Admin\Panel;
+use Sunrice\Cms\Actions\Entries\CreateEntry;
+use Sunrice\Cms\Actions\Entries\PublishEntry;
+use Sunrice\Cms\Models\Collection;
+use Sunrice\Cms\Models\Entry;
 use Sunrice\Commerce\Cart\CartView;
 use Sunrice\Commerce\Cart\Models\Cart;
 use Sunrice\Commerce\Catalog\Actions\ScaffoldStore;
@@ -14,49 +19,47 @@ use Sunrice\Commerce\Regions\RegionImporter;
 use Sunrice\Commerce\Shipping\Models\ShippingMethod;
 use Sunrice\Commerce\Shipping\Models\ShippingZone;
 use Sunrice\CommerceXendit\Tests\TestCase;
-use Sunrice\Models\Blueprint;
-use Sunrice\Models\Collection;
-use Sunrice\Models\Entry;
-use Sunrice\Support\Locales;
+use Workbench\App\Models\User;
 
 uses(TestCase::class)->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
-| Test helpers (trimmed from commerce's tests/Pest.php)
+| Test helpers (from commerce's tests/Pest.php)
 |--------------------------------------------------------------------------
 */
 
-/** The products collection with a blueprint holding the product field. */
-function productCollection(): Collection
+/**
+ * Sign in to the admin as a user whose role has these permissions (plus
+ * the panel's access).
+ *
+ * @param  array<int, string>  $permissions
+ */
+function actingAsUserWith(array $permissions, string $email = 'staff@example.com'): User
 {
-    $existing = Collection::query()->where('handle', 'products')->first();
-    if ($existing !== null) {
-        return $existing;
-    }
-    $blueprint = Blueprint::query()->create(['handle' => 'product', 'title' => 'Product', 'fields' => [
-        ['handle' => 'product', 'type' => 'commerce_product', 'label' => 'Product'],
-    ]]);
+    app(SyncPermissions::class)->handle();
+    $role = Role::findOrCreate('Role '.md5($email), 'web');
+    $role->givePermissionTo([Panel::ACCESS, ...$permissions]);
+    $user = User::query()->create(['name' => 'Staff', 'email' => $email, 'password' => bcrypt('password')]);
+    $user->assignRole($role);
+    test()->actingAs($user, 'web');
 
-    return Collection::query()->create(['handle' => 'products', 'title' => 'Products', 'blueprint_id' => $blueprint->id, 'settings' => ['route' => 'products/{slug}']]);
+    return $user;
 }
 
 /**
- * Save a product entry's draft and publish it (Sunrice's own actions).
+ * Create and publish a product entry in the store's products collection
+ * (ScaffoldStore makes it), with the CMS's own actions.
  *
  * @param  array<string, mixed>  $value  the product field value
  */
 function publishProduct(array $value, string $title = 'T-shirt'): Entry
 {
-    $collection = productCollection();
-    $entry = Entry::query()->create(['collection_id' => $collection->id, 'status' => 'draft', 'sort_order' => 0]);
-    $translation = $entry->translations()->create([
-        'locale' => Locales::main(), 'collection_id' => $collection->id, 'title' => $title, 'slug' => Str::slug($title), 'data' => [], 'seo' => [],
-    ]);
-    app(SaveDraft::class)->handle($translation, ['title' => $title, 'slug' => Str::slug($title), 'data' => ['product' => $value]]);
-    app(PublishTranslation::class)->handle($translation->fresh());
+    $collection = Collection::query()->where('handle', 'products')->firstOrFail();
+    $translation = app(CreateEntry::class)->handle($collection, ['title' => $title, 'slug' => Str::slug($title), 'data' => ['product' => $value]]);
+    app(PublishEntry::class)->handle($translation->fresh());
 
-    return $entry->fresh();
+    return $translation->entry->fresh();
 }
 
 /**
