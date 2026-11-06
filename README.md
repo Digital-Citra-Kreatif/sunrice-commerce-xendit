@@ -23,8 +23,8 @@ outlet, and comes back to the order. Currencies: IDR, PHP, THB, VND and MYR.
 composer require sunrice/commerce-xendit
 ```
 
-Requirements: PHP 8.4+, Laravel 13, Sunrice Commerce with `Payments\Methods\GatewayMethod`. The
-provider is discovered automatically.
+Requirements: PHP 8.4+, Laravel 13, Sunrice Commerce 0.1 (`sunrice/commerce`, which Composer
+installs with it). The provider is discovered automatically.
 
 The package uses Xendit's SDK, `xendit/xendit-php` 7.x, which needs **Guzzle 7**
 (`guzzlehttp/guzzle` ^7.3). Laravel 13 takes Guzzle 7 or 8, so Composer installs Guzzle 7; an
