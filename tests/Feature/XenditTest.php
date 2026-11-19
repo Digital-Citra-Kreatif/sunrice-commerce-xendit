@@ -166,7 +166,7 @@ it('charges a deposit at checkout and the balance on its own invoice', function 
 
     // The balance: a new payment, external_id and invoice.
     $this->post("/order/{$order->order_key}/pay", ['payment_method' => 'xendit'])->assertRedirect('https://checkout.xendit.co/web/inv-2');
-    $balance = $order->payments()->latest('id')->first();
+    $balance = $order->payments()->reorder('id', 'desc')->first();
     expect($balance->amount)->toBe(42000)->and($balance->meta)->toMatchArray(['part' => 'balance', 'invoice_id' => 'inv-2'])
         ->and($balance->reference)->not->toBe($deposit->reference)
         ->and($this->xendit->created[1][0])->toMatchArray(['external_id' => $balance->reference, 'amount' => 42000]);
@@ -183,7 +183,7 @@ it('keeps a deposit order open when the balance invoice expires', function () {
     $order = placeWithXendit($this->mug);
     xenditCallback($order, ['status' => 'PAID', 'amount' => 18000, 'paid_amount' => 18000])->assertOk();
     $this->post("/order/{$order->order_key}/pay", ['payment_method' => 'xendit']);
-    $balance = $order->payments()->latest('id')->first();
+    $balance = $order->payments()->reorder('id', 'desc')->first();
 
     xenditCallback($order, ['id' => 'inv-2', 'external_id' => $balance->reference, 'status' => 'EXPIRED', 'amount' => 42000])->assertOk();
     $order->refresh();
