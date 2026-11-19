@@ -15,6 +15,10 @@ outlet, and comes back to the order. Currencies: IDR, PHP, THB, VND and MYR.
 - [Sandbox (test mode)](#sandbox-test-mode)
 - [How it works](#how-it-works)
 - [Statuses](#statuses)
+- [The scheduler](#the-scheduler)
+- [Deposits](#deposits)
+- [Refunds](#refunds)
+- [Troubleshooting](#troubleshooting)
 - [Testing your own code](#testing-your-own-code)
 
 ## Install
@@ -118,6 +122,68 @@ Switch Sandbox off once the live keys and the live webhook are set.
 | `PAID`, `SETTLED` | paid (the second changes nothing) |
 | `PENDING` | pending |
 | `EXPIRED` | expired (the order is cancelled) |
+
+## The scheduler
+
+Run Laravel's scheduler, which runs commerce's `commerce:tick` every minute:
+
+```cron
+* * * * * cd /path/to/site && php artisan schedule:run >> /dev/null 2>&1
+```
+
+It is the safety net for webhooks. When an unpaid payment's deadline passes, `commerce:tick` first
+asks Xendit for its status, so a payment whose notification was lost is still recorded as paid. Only
+a payment that is still unpaid then expires, which cancels the order. Without the scheduler, a lost
+notification leaves the order unpaid and unpaid orders never expire.
+
+## Deposits
+
+When an extension asks for a deposit (commerce's
+[Deposits](https://github.com/Digital-Citra-Kreatif/sunrice-commerce/blob/main/docs/payments.md#deposits),
+Sunrice Commerce 0.3), the deposit and the balance are two separate payments, each with its own
+Xendit invoice for its own amount. The deposit is charged at checkout, the balance when the customer
+pays it from the order page. A notification for the balance with the deposit's amount, or the
+reverse, is refused like any other wrong amount. An expired balance leaves the order open and
+Partially paid.
+
+## Refunds
+
+Xendit doesn't report invoice refunds to the store, so a refund made in the Xendit dashboard doesn't
+reach the order. Record it yourself: **Refund** on the order page, with the amount (and the items to
+restock). The method doesn't send refunds to Xendit.
+
+## Troubleshooting
+
+Commerce stores every call to `/commerce/webhooks/xendit` in the `commerce_webhook_calls` table
+(kept 30 days, `commerce.webhooks.keep_days`). The admin has no page for it, so query it:
+
+```sql
+SELECT received_at, status, error, event_id, payment_id
+FROM commerce_webhook_calls WHERE method = 'xendit' ORDER BY id DESC LIMIT 20;
+```
+
+| `status` | Meaning |
+| --- | --- |
+| `processed` | Verified and recorded: the payment (and order) changed. |
+| `ignored` | Verified, but nothing to change: a duplicate, a status the payment already has, or an unknown reference (`error` says which). |
+| `failed` | Refused with `400` (`error` says why), or failed while recording with `500` (Xendit retries). |
+
+If a payment doesn't update:
+
+- **No rows at all**: Xendit isn't calling the store. Check that the webhook URL is set in the
+  dashboard for the mode you're paying in (test and live are separate), that it is reachable from
+  the internet, and that the Payments and Xendit modules are on (a module that's off answers `404`).
+- **`failed`, token**: the callback token (`XENDIT_SANDBOX_CALLBACK_TOKEN` or
+  `XENDIT_CALLBACK_TOKEN`) in `.env` belongs to the other mode, or the method's **Sandbox** switch
+  doesn't match the dashboard you're paying in. After editing `.env`, clear the config cache
+  (`php artisan config:clear`).
+- **`failed`, amount**: Xendit reported a different amount from the payment's, and the payment stays
+  unpaid. Check the transaction in the dashboard, then mark the order paid by hand if the money
+  arrived.
+- **`ignored`, unknown reference**: the notification is for a transaction this store didn't create
+  (another site on the same Xendit account, or a dashboard test).
+- **No change after the customer paid**: wait for the notification or the scheduler's check (see
+  [The scheduler](#the-scheduler)).
 
 ## Testing your own code
 
