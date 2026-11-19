@@ -5,13 +5,16 @@ declare(strict_types=1);
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Testing\TestResponse;
 use Sunrice\Commerce\Catalog\Models\Variant;
+use Sunrice\Commerce\Commerce;
 use Sunrice\Commerce\Features\Actions\ToggleFeature;
 use Sunrice\Commerce\Orders\Models\Order;
 use Sunrice\Commerce\Payments\Models\WebhookCall;
 use Sunrice\Commerce\Payments\PaymentContext;
 use Sunrice\Commerce\Payments\PaymentManager;
+use Sunrice\Commerce\Pricing\CalculationState;
 use Sunrice\Commerce\Settings\StoreSettings;
 use Sunrice\CommerceXendit\Gateways\XenditClient;
+use Workbench\App\Commerce\TestDeposit;
 
 /*
  * Xendit invoices with a fake client (no network): the redirect, its
@@ -67,7 +70,8 @@ function placeWithXendit(Variant $mug): Order
 
 function xenditCallback(Order $order, array $data, string $token = 'cb-live'): TestResponse
 {
-    $data = ['id' => 'inv-1', 'external_id' => $order->payments()->sole()->reference, 'amount' => 60000, ...$data];
+    $data['external_id'] ??= $order->payments()->oldest('id')->firstOrFail()->reference;
+    $data = ['id' => 'inv-1', 'amount' => 60000, ...$data];
 
     return test()->postJson('/commerce/webhooks/xendit', $data, ['x-callback-token' => $token]);
 }
@@ -148,3 +152,40 @@ it('asks Xendit for the invoice when the customer returns', function () {
     $this->get("/order/{$order->order_key}/payment/return")->assertRedirect($order->url());
     expect($order->fresh()->payment_status)->toBe('paid');
 });
+
+it('charges a deposit at checkout and the balance on its own invoice', function () {
+    app(Commerce::class)->registerCalculationStage(TestDeposit::class, 95);
+    $order = placeWithXendit($this->mug);
+    $deposit = $order->payments()->sole();
+    expect([$order->total, $order->deposit_total, $deposit->amount])->toBe([60000, 18000, 18000])
+        ->and($this->xendit->created[0][0])->toMatchArray(['external_id' => $deposit->reference, 'amount' => 18000]);
+
+    xenditCallback($order, ['status' => 'PAID', 'amount' => 18000, 'paid_amount' => 18000])->assertOk();
+    $order->refresh();
+    expect([$order->status, $order->payment_status, $order->paid_total, $order->balanceDue()])->toBe(['processing', 'partially_paid', 18000, 42000]);
+
+    // The balance: a new payment, external_id and invoice.
+    $this->post("/order/{$order->order_key}/pay", ['payment_method' => 'xendit'])->assertRedirect('https://checkout.xendit.co/web/inv-2');
+    $balance = $order->payments()->latest('id')->first();
+    expect($balance->amount)->toBe(42000)->and($balance->meta)->toMatchArray(['part' => 'balance', 'invoice_id' => 'inv-2'])
+        ->and($balance->reference)->not->toBe($deposit->reference)
+        ->and($this->xendit->created[1][0])->toMatchArray(['external_id' => $balance->reference, 'amount' => 42000]);
+
+    // The deposit's amount on the balance's invoice isn't the balance.
+    xenditCallback($order, ['id' => 'inv-2', 'external_id' => $balance->reference, 'status' => 'PAID', 'amount' => 42000, 'paid_amount' => 18000])->assertStatus(400);
+    xenditCallback($order, ['id' => 'inv-2', 'external_id' => $balance->reference, 'status' => 'PAID', 'amount' => 42000, 'paid_amount' => 42000])->assertOk();
+    $order->refresh();
+    expect([$order->status, $order->payment_status, $order->paid_total])->toBe(['processing', 'paid', 60000]);
+})->skip(! property_exists(CalculationState::class, 'deposit'), 'Deposits need Sunrice Commerce 0.3.');
+
+it('keeps a deposit order open when the balance invoice expires', function () {
+    app(Commerce::class)->registerCalculationStage(TestDeposit::class, 95);
+    $order = placeWithXendit($this->mug);
+    xenditCallback($order, ['status' => 'PAID', 'amount' => 18000, 'paid_amount' => 18000])->assertOk();
+    $this->post("/order/{$order->order_key}/pay", ['payment_method' => 'xendit']);
+    $balance = $order->payments()->latest('id')->first();
+
+    xenditCallback($order, ['id' => 'inv-2', 'external_id' => $balance->reference, 'status' => 'EXPIRED', 'amount' => 42000])->assertOk();
+    $order->refresh();
+    expect([$order->status, $order->payment_status, $balance->fresh()->status])->toBe(['processing', 'partially_paid', 'expired']);
+})->skip(! property_exists(CalculationState::class, 'deposit'), 'Deposits need Sunrice Commerce 0.3.');
