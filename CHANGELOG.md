@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.3 (2026-11-21)
+
+Works with Sunrice Commerce 0.4 (and Sunrice 0.8) as well as 0.1 to 0.3 (`sunrice/commerce`
+`^0.1 || ^0.2 || ^0.3 || ^0.4`). No code changes. Update with `composer update sunrice/commerce-xendit`.
+
 ## 0.1.2 (2026-11-19)
 
 Works with Sunrice Commerce 0.3 as well as 0.1 and 0.2. No code changes: commerce 0.3's deposits
